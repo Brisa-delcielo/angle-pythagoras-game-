@@ -303,17 +303,14 @@
         }
 
         function downloadCert() {
-            // Creamos un canvas virtual de alta resolución (1200x1200px)
             const highResCanvas = document.createElement('canvas');
             highResCanvas.width = 1200;
             highResCanvas.height = 1200;
             const hCtx = highResCanvas.getContext('2d');
 
-            // Fondo negro limpio
             hCtx.fillStyle = "#000";
             hCtx.fillRect(0, 0, 1200, 1200);
 
-            // Marco exterior elegante y grueso
             hCtx.strokeStyle = "#fff";
             hCtx.lineWidth = 12;
             hCtx.strokeRect(45, 45, 1110, 1110);
@@ -321,33 +318,26 @@
             hCtx.fillStyle = "#fff";
             hCtx.textAlign = "center";
 
-            // Título principal
             hCtx.font = "bold 48px 'Courier New'";
             hCtx.fillText("CERTIFICATE OF HONOR", 600, 180);
 
-            // Texto descriptivo
             hCtx.font = "36px 'Courier New'";
             hCtx.fillText("This award is presented to:", 600, 300);
 
-            // Nombre del jugador en grande
             hCtx.font = "bold 64px 'Courier New'";
             hCtx.fillText(playerName.toUpperCase(), 600, 420);
 
-            // Detalles del logro
             hCtx.font = "33px 'Courier New'";
             hCtx.fillText("For mastering all 10 trigonometry levels", 600, 570);
             hCtx.fillText("and successfully connecting geometric points.", 600, 630);
 
-            // Fecha actual
             let today = new Date().toLocaleDateString();
             hCtx.font = "33px 'Courier New'";
             hCtx.fillText(`Date: ${today}`, 600, 780);
 
-            // Insignia final
             hCtx.font = "bold 36px 'Courier New'";
             hCtx.fillText("--- MASTER OF ANGLES ---", 600, 930);
 
-            // Descarga de la imagen optimizada
             let link = document.createElement('a');
             link.download = `pythagoras-certificate-${playerName}.png`;
             link.href = highResCanvas.toDataURL('image/png');
