@@ -186,7 +186,6 @@
                     return;
                 }
 
-                // Verificar colisiones con los puntos para unirlos con la recta
                 for (let t of targets) {
                     if (!t.hit) {
                         let dist = Math.hypot(ball.x - t.x, ball.y - t.y);
@@ -196,7 +195,6 @@
                     }
                 }
 
-                // Si todos los objetivos fueron alcanzados en esta línea recta
                 if (targets.every(target => target.hit)) {
                     ball = null;
                     if (level < maxLevels) {
@@ -214,23 +212,21 @@
             ctx.fillRect(0, 0, 400, 400);
 
             if (state === "VICTORY") {
-                drawCertificate();
+                drawCertificatePreview();
                 return;
             }
 
-            // Dibujar la línea recta de trayectoria (rastro desde el cañón)
             if (state === "SHOOTING" && ball) {
                 ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
                 ctx.lineWidth = 1;
-                ctx.setLineDash([4, 4]); // Línea punteada geométrica
+                ctx.setLineDash([4, 4]);
                 ctx.beginPath();
                 ctx.moveTo(cannon.x, cannon.y);
                 ctx.lineTo(ball.x, ball.y);
                 ctx.stroke();
-                ctx.setLineDash([]); // Resetear patrón
+                ctx.setLineDash([]);
             }
 
-            // Dibujar cañón
             ctx.fillStyle = "#fff";
             ctx.beginPath();
             ctx.arc(cannon.x, cannon.y, 8, 0, Math.PI * 2);
@@ -246,7 +242,6 @@
             ctx.lineTo(endX, endY);
             ctx.stroke();
 
-            // Dibujar objetivos (Puntos de la gráfica)
             for (let t of targets) {
                 ctx.fillStyle = t.hit ? "rgba(255, 255, 255, 0.2)" : "#fff";
                 ctx.beginPath();
@@ -276,7 +271,7 @@
             }
         }
 
-        function drawCertificate() {
+        function drawCertificatePreview() {
             ctx.strokeStyle = "#fff";
             ctx.lineWidth = 4;
             ctx.strokeRect(15, 15, 370, 370);
@@ -301,16 +296,61 @@
             ctx.fillText("--- MASTER OF ANGLES ---", 200, 310);
 
             document.getElementById("math-text").innerHTML = 
-                `<b>Game Completed!</b><br>Click the button below to download your certificate.`;
+                `<b>Game Completed!</b><br>Click the button below to download your certificate in high resolution.`;
             
             let controlsDiv = document.getElementById("controls-container");
             controlsDiv.innerHTML = `<button id="download-btn" onclick="downloadCert()">DOWNLOAD CERTIFICATE</button>`;
         }
 
         function downloadCert() {
+            // Creamos un canvas virtual de alta resolución (1200x1200px)
+            const highResCanvas = document.createElement('canvas');
+            highResCanvas.width = 1200;
+            highResCanvas.height = 1200;
+            const hCtx = highResCanvas.getContext('2d');
+
+            // Fondo negro limpio
+            hCtx.fillStyle = "#000";
+            hCtx.fillRect(0, 0, 1200, 1200);
+
+            // Marco exterior elegante y grueso
+            hCtx.strokeStyle = "#fff";
+            hCtx.lineWidth = 12;
+            hCtx.strokeRect(45, 45, 1110, 1110);
+
+            hCtx.fillStyle = "#fff";
+            hCtx.textAlign = "center";
+
+            // Título principal
+            hCtx.font = "bold 48px 'Courier New'";
+            hCtx.fillText("CERTIFICATE OF HONOR", 600, 180);
+
+            // Texto descriptivo
+            hCtx.font = "36px 'Courier New'";
+            hCtx.fillText("This award is presented to:", 600, 300);
+
+            // Nombre del jugador en grande
+            hCtx.font = "bold 64px 'Courier New'";
+            hCtx.fillText(playerName.toUpperCase(), 600, 420);
+
+            // Detalles del logro
+            hCtx.font = "33px 'Courier New'";
+            hCtx.fillText("For mastering all 10 trigonometry levels", 600, 570);
+            hCtx.fillText("and successfully connecting geometric points.", 600, 630);
+
+            // Fecha actual
+            let today = new Date().toLocaleDateString();
+            hCtx.font = "33px 'Courier New'";
+            hCtx.fillText(`Date: ${today}`, 600, 780);
+
+            // Insignia final
+            hCtx.font = "bold 36px 'Courier New'";
+            hCtx.fillText("--- MASTER OF ANGLES ---", 600, 930);
+
+            // Descarga de la imagen optimizada
             let link = document.createElement('a');
             link.download = `pythagoras-certificate-${playerName}.png`;
-            link.href = canvas.toDataURL();
+            link.href = highResCanvas.toDataURL('image/png');
             link.click();
         }
 
