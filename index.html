@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Angle & Pythagorean Game</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow-y: auto;
+        }
+        #login-screen, #game-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #game-screen {
+            display: none;
+        }
+        canvas {
+            border: 2px solid #fff;
+            background-color: #000;
+            max-width: 100%;
+            height: auto;
+        }
+        #hud {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .controls {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+        }
+        button, input {
+            background: #000;
+            color: #fff;
+            border: 2px solid #fff;
+            padding: 10px 15px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        input {
+            text-align: center;
+            width: 120px;
+        }
+        button:active {
+            background: #fff;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen">
+        <h2>GEOMETRY & PYTHAGORAS</h2>
+        <p>Enter your name or nickname:</p>
+        <input type="text" id="player-name" placeholder="E.g. Pythagoras Jr." maxlength="20">
+        <br>
+        <button onclick="startGame()">START GAME</button>
+    </div>
+
+    <div id="game-screen">
+        <h2 id="level-title">LEVEL 1 / 10</h2>
+        <canvas id="gameCanvas" width="400" height="400"></canvas>
+        
+        <div id="hud">
+            <p id="math-text">Calculating pythagorean data...</p>
+        </div>
+
+        <div class="controls" id="controls-container">
+            <input type="number" id="angle-input" placeholder="Angle (°)" step="0.1" min="1" max="179">
+            <button onclick="fireBall()">FIRE</button>
+        </div>
+    </div>
+
+    <script>
+        let playerName = "Anonymous Mathematician";
+        
+        window.onload = function() {
+            let savedName = localStorage.getItem('pitagoras_player_name');
+            if (savedName) {
+                document.getElementById("player-name").value = savedName;
+            }
+        };
+
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        let level = 1;
+        let maxLevels = 10;
+        let angle = 45;
+        let targets = [];
+        let ball = null;
+        let state = "AIMING";
+
+        const cannon = { x: 200, y: 400 };
+
+        function startGame() {
+            let inputVal = document.getElementById("player-name").value.trim();
+            if (inputVal !== "") {
+                playerName = inputVal;
+                localStorage.setItem('pitagoras_player_name', playerName);
+            }
+            document.getElementById("login-screen").style.display = "none";
+            document.getElementById("game-screen").style.display = "flex";
+            setupLevel();
+            loop();
+        }
+
+        function setupLevel() {
+            targets = [];
+            let numTargets = Math.min(1 + Math.floor((level - 1) / 3), 4);
+
+            for (let i = 0; i < numTargets; i++) {
+                let sides = ['top', 'bottom', 'left', 'right'];
+                let side = sides[Math.floor(Math.random() * sides.length)];
+                let tx, ty;
+
+                if (side === 'top') {
+                    tx = Math.random() * 320 + 40; ty = 0;
+                } else if (side === 'bottom') {
+                    tx = Math.random() * 320 + 40; ty = 400;
+                } else if (side === 'left') {
+                    tx = 0; ty = Math.random() * 320 + 40;
+                } else {
+                    tx = 400; ty = Math.random() * 320 + 40;
+                }
+                targets.push({ x: tx, y: ty, hit: false });
+            }
+            state = "AIMING";
+            ball = null;
+            document.getElementById("angle-input").value = "";
+        }
+
+        function fireBall() {
+            if (state !== "AIMING") return;
+
+            let inputVal = document.getElementById("angle-input").value;
+            if (inputVal === "") {
+                alert("You must enter an angle before firing!");
+                return;
+            }
+
+            let typedAngle = parseFloat(inputVal);
+            if (isNaN(typedAngle) || typedAngle <= 0 || typedAngle >= 180) {
+                alert("Please enter a valid angle between 1° and 179°");
+                return;
+            }
+
+            angle = typedAngle;
+            let rad = (angle * Math.PI) / 180;
+            let speed = 8;
+            
+            ball = {
+                x: cannon.x,
+                y: cannon.y,
+                vx: speed * Math.cos(rad),
+                vy: -speed * Math.sin(rad)
+            };
+            state = "SHOOTING";
+        }
+
+        function update() {
+            if (state === "SHOOTING" && ball) {
+                ball.x += ball.vx;
+                ball.y += ball.vy;
+
+                if (ball.x < 0 || ball.x > 400 || ball.y < 0 || ball.y > 400) {
+                    state = "AIMING";
+                    ball = null;
+                    return;
+                }
+
+                // Verificar colisiones con los puntos para unirlos con la recta
+                for (let t of targets) {
+                    if (!t.hit) {
+                        let dist = Math.hypot(ball.x - t.x, ball.y - t.y);
+                        if (dist < 12) {
+                            t.hit = true;
+                        }
+                    }
+                }
+
+                // Si todos los objetivos fueron alcanzados en esta línea recta
+                if (targets.every(target => target.hit)) {
+                    ball = null;
+                    if (level < maxLevels) {
+                        level++;
+                        setupLevel();
+                    } else {
+                        state = "VICTORY";
+                    }
+                }
+            }
+        }
+
+        function draw() {
+            ctx.fillStyle = "#000";
+            ctx.fillRect(0, 0, 400, 400);
+
+            if (state === "VICTORY") {
+                drawCertificate();
+                return;
+            }
+
+            // Dibujar la línea recta de trayectoria (rastro desde el cañón)
+            if (state === "SHOOTING" && ball) {
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+                ctx.lineWidth = 1;
+                ctx.setLineDash([4, 4]); // Línea punteada geométrica
+                ctx.beginPath();
+                ctx.moveTo(cannon.x, cannon.y);
+                ctx.lineTo(ball.x, ball.y);
+                ctx.stroke();
+                ctx.setLineDash([]); // Resetear patrón
+            }
+
+            // Dibujar cañón
+            ctx.fillStyle = "#fff";
+            ctx.beginPath();
+            ctx.arc(cannon.x, cannon.y, 8, 0, Math.PI * 2);
+            ctx.fill();
+
+            let rad = (angle * Math.PI) / 180;
+            let endX = cannon.x + 30 * Math.cos(rad);
+            let endY = cannon.y - 30 * Math.sin(rad);
+            ctx.strokeStyle = "#fff";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(cannon.x, cannon.y);
+            ctx.lineTo(endX, endY);
+            ctx.stroke();
+
+            // Dibujar objetivos (Puntos de la gráfica)
+            for (let t of targets) {
+                ctx.fillStyle = t.hit ? "rgba(255, 255, 255, 0.2)" : "#fff";
+                ctx.beginPath();
+                ctx.arc(t.x, t.y, 6, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            if (ball) {
+                ctx.fillStyle = "#fff";
+                ctx.beginPath();
+                ctx.arc(ball.x, ball.y, 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            let active = targets.find(t => !t.hit);
+            document.getElementById("level-title").innerText = `LEVEL ${level} / ${maxLevels}`;
+            
+            if (active) {
+                let dx = Math.abs(active.x - cannon.x);
+                let dy = Math.abs(cannon.y - active.y);
+                let distance = Math.hypot(dx, dy);
+
+                document.getElementById("math-text").innerHTML = 
+                    `Cannon: (${cannon.x}, ${cannon.y}) | Target: (${Math.round(active.x)}, ${Math.round(active.y)})<br>` +
+                    `Leg X: <b>${Math.round(dx)}px</b> | Leg Y: <b>${Math.round(dy)}px</b><br>` +
+                    `Pythagoras (Hypotenuse/Distance): <b>${distance.toFixed(1)}px</b>`;
+            }
+        }
+
+        function drawCertificate() {
+            ctx.strokeStyle = "#fff";
+            ctx.lineWidth = 4;
+            ctx.strokeRect(15, 15, 370, 370);
+
+            ctx.fillStyle = "#fff";
+            ctx.font = "bold 16px 'Courier New'";
+            ctx.textAlign = "center";
+            ctx.fillText("CERTIFICATE OF HONOR", 200, 60);
+
+            ctx.font = "12px 'Courier New'";
+            ctx.fillText("This award is presented to:", 200, 100);
+
+            ctx.font = "bold 18px 'Courier New'";
+            ctx.fillText(playerName.toUpperCase(), 200, 140);
+
+            ctx.font = "11px 'Courier New'";
+            ctx.fillText("For mastering all 10 trigonometry levels", 200, 190);
+            ctx.fillText("and successfully connecting geometric points.", 200, 210);
+
+            let today = new Date().toLocaleDateString();
+            ctx.fillText(`Date: ${today}`, 200, 260);
+            ctx.fillText("--- MASTER OF ANGLES ---", 200, 310);
+
+            document.getElementById("math-text").innerHTML = 
+                `<b>Game Completed!</b><br>Click the button below to download your certificate.`;
+            
+            let controlsDiv = document.getElementById("controls-container");
+            controlsDiv.innerHTML = `<button id="download-btn" onclick="downloadCert()">DOWNLOAD CERTIFICATE</button>`;
+        }
+
+        function downloadCert() {
+            let link = document.createElement('a');
+            link.download = `pythagoras-certificate-${playerName}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        function loop() {
+            update();
+            draw();
+            if (state !== "VICTORY") {
+                requestAnimationFrame(loop);
+            }
+        }
+    </script>
+</body>
+</html>
